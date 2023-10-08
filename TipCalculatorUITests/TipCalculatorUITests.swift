@@ -7,35 +7,95 @@
 
 import XCTest
 
-final class TipCalculatorUITests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
+final class when_content_view_is_shown: XCTestCase {
+    
+    private var app : XCUIApplication!
+    private var contentViewPage : ContentViewPage!
+    
+    override func setUp() {
+        app = XCUIApplication()
+        contentViewPage = ContentViewPage(app: app)
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
         app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
+    
+    func test_should_make_sure_the_total_textfield_contains_default_value() {
+        XCTAssertEqual(contentViewPage.totalTextField.value as! String, "Enter total")
+    }
+    
+    func test_should_make_sure_20_percent_default_tip_option_is_selected() {
+        let segmentControlButton = contentViewPage.tipPercentageSegmentedControl.buttons.element(boundBy: 1)
+        XCTAssertEqual(segmentControlButton.label, "20%")
+        XCTAssertTrue(segmentControlButton.isSelected)
+    }
+    
+    override func tearDown() {
+        //clean up
+    }
+}
 
-    func testLaunchPerformance() throws {
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
-            // This measures how long it takes to launch your application.
-            measure(metrics: [XCTApplicationLaunchMetric()]) {
-                XCUIApplication().launch()
-            }
-        }
+class test_when_calculate_tip_button_is_pressed_for_valid_input : XCTestCase {
+    private var app : XCUIApplication!
+    private var contentViewPage : ContentViewPage!
+
+    override func setUp() {
+        app = XCUIApplication()
+        contentViewPage = ContentViewPage(app: app)
+        continueAfterFailure = false
+        app.launch()
+        
+        let calculateTipButton = contentViewPage.calculateTipButton
+        
+        let totalTextField = contentViewPage.totalTextField
+        totalTextField.tap()
+        totalTextField.typeText("100")
+        
+        calculateTipButton.tap()
+    }
+    
+    func test_should_make_sure_that_tip_is_displayed_on_the_screen() {
+                
+        let tipText = contentViewPage.tipText
+        let _ = tipText.waitForExistence(timeout: 0.5)
+        
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        let tip  = formatter.string(from: NSNumber(value: 20))
+        
+        XCTAssertEqual(tipText.label, tip)
+    }
+}
+
+class test_when_calculate_tip_button_is_pressed_for_invalid_input : XCTestCase {
+    private var app : XCUIApplication!
+    private var contentViewPage : ContentViewPage!
+
+    override func setUp() {
+        app = XCUIApplication()
+        contentViewPage = ContentViewPage(app: app)
+        continueAfterFailure = false
+        app.launch()
+        
+        let calculateTipButton = contentViewPage.calculateTipButton
+        
+        let totalTextField = contentViewPage.totalTextField
+        totalTextField.tap()
+        totalTextField.typeText("-100")
+        
+        calculateTipButton.tap()
+    }
+    
+    func test_should_clear_tip_text_on_invalid_input() {
+        
+        let tipText = contentViewPage.tipText
+        let _ = tipText.waitForExistence(timeout: 0.5)
+        XCTAssertEqual(tipText.label, "")
+    }
+    
+    func test_should_display_error_message_on_invalid_input() {
+        
+        let messagaText = contentViewPage.messageText
+        let _ = messagaText.waitForExistence(timeout: 0.5)
+        XCTAssertEqual(messagaText.label, "Invalid Input")
     }
 }
